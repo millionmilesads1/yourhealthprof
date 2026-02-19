@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { 
   Heart, Lightbulb, Shield, Eye, Lock, MessageCircle, 
   ChevronDown, Check, MapPin, Phone, Star, Quote, 
-  Calendar, User, BookOpen, Users, Brain, Activity, ArrowRight, Menu, X
+  Calendar, User, BookOpen, Users, Brain, Activity, ArrowRight, Menu, X, Leaf
 } from 'lucide-react'
 
 // --- CONSTANTS ---
@@ -45,30 +45,35 @@ const RevealOnScroll: React.FC<{ children: React.ReactNode; className?: string; 
 };
 
 /**
- * ImagePlaceholder handles the loading of images and provides a prominent fallback with a filename label.
+ * ImagePlaceholder handles the loading of images.
+ * It ONLY shows the filename label if the image fails to load.
  */
 const ImagePlaceholder: React.FC<{ src: string; alt: string; className?: string }> = ({ src, alt, className = "" }) => {
   const [error, setError] = useState(false);
+  const [loaded, setLoaded] = useState(false);
   
   return (
-    <div className={`relative overflow-hidden bg-emerald-50/60 flex items-center justify-center border-2 border-dashed border-[#1a4a3a]/20 group ${className}`}>
-      {!error ? (
+    <div className={`relative overflow-hidden bg-emerald-50/60 flex items-center justify-center border border-[#1a4a3a]/10 group ${className}`}>
+      {!error && (
         <img 
           src={src} 
           alt={alt} 
-          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
+          className={`w-full h-full object-cover transition-all duration-1000 group-hover:scale-105 ${loaded ? 'opacity-100' : 'opacity-0'}`} 
+          onLoad={() => setLoaded(true)}
           onError={() => setError(true)} 
         />
-      ) : null}
+      )}
       
-      {/* Label is always visible as a watermark if image loads (on hover), or central if it fails */}
-      <div className={`absolute inset-0 flex items-center justify-center pointer-events-none transition-colors duration-300 ${error ? 'bg-emerald-50/90' : 'bg-transparent group-hover:bg-black/10'}`}>
-        <div className="bg-white/90 backdrop-blur-sm px-4 py-2 rounded-lg border border-[#1a4a3a]/10 shadow-sm transform transition-all group-hover:scale-110">
-           <span className={`font-serif italic text-xs md:text-sm text-[#1a4a3a] text-center block`}>
-            {src}
-          </span>
+      {/* Fallback label: ONLY visible if error or not yet loaded */}
+      {(error || !loaded) && (
+        <div className="absolute inset-0 flex items-center justify-center bg-emerald-50/90 p-4">
+          <div className="bg-white/80 backdrop-blur-sm px-4 py-2 rounded-lg border border-[#1a4a3a]/10 shadow-sm text-center">
+             <span className="font-serif italic text-xs md:text-sm text-[#1a4a3a]">
+              {error ? `Missing: ${src}` : `Loading ${src}...`}
+            </span>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
@@ -76,17 +81,30 @@ const ImagePlaceholder: React.FC<{ src: string; alt: string; className?: string 
 /**
  * CTA Button for WhatsApp
  */
-const WhatsAppCTA: React.FC<{ label?: string; className?: string; icon?: boolean }> = ({ label = "Book a Free Call", className = "", icon = false }) => (
-  <a 
-    href={WHATSAPP_URL} 
-    target="_blank" 
-    rel="noopener noreferrer" 
-    className={`inline-flex items-center justify-center gap-2 px-8 py-4 bg-[#1a4a3a] text-white rounded-full font-semibold hover:bg-[#123328] transition-all shadow-xl shadow-[#1a4a3a]/10 active:scale-95 whitespace-nowrap ${className}`}
-  >
-    {icon && <MessageCircle size={18} />}
-    {label}
-  </a>
-);
+const WhatsAppCTA: React.FC<{ label?: string; className?: string; icon?: boolean; variant?: 'primary' | 'secondary' | 'outline' }> = ({ 
+  label = "Book a Free Call", 
+  className = "", 
+  icon = false,
+  variant = 'primary'
+}) => {
+  const styles = {
+    primary: "bg-[#1a4a3a] text-white hover:bg-[#123328] shadow-xl shadow-[#1a4a3a]/10",
+    secondary: "bg-white text-[#1a4a3a] hover:bg-emerald-50 shadow-lg",
+    outline: "border-2 border-[#1a4a3a] text-[#1a4a3a] hover:bg-[#1a4a3a]/5"
+  };
+
+  return (
+    <a 
+      href={WHATSAPP_URL} 
+      target="_blank" 
+      rel="noopener noreferrer" 
+      className={`inline-flex items-center justify-center gap-2 px-8 py-4 rounded-full font-semibold transition-all active:scale-95 whitespace-nowrap ${styles[variant]} ${className}`}
+    >
+      {icon && <MessageCircle size={18} />}
+      {label}
+    </a>
+  );
+};
 
 // --- PAGE COMPONENTS ---
 
@@ -198,7 +216,7 @@ const AboutPage = () => (
           <p className="text-lg text-[#1a4a3a]/70 leading-relaxed font-light mb-8">
             Together, we will tackle the complexities of your health, ensuring you receive the expert support and guidance you need. Let's take this transformative journey to wellness together!
           </p>
-          <WhatsAppCTA label="Let's Talk" icon className="bg-emerald-800" />
+          <WhatsAppCTA label="Let's Talk" icon />
         </RevealOnScroll>
       </div>
     </section>
@@ -213,7 +231,7 @@ const AboutPage = () => (
           "Every problem has a solution"
         </h2>
         <p className="text-emerald-300 text-xl font-light tracking-wide italic mb-10">— Let's find yours...</p>
-        <WhatsAppCTA label="Message Me" className="bg-white text-[#1a4a3a] hover:bg-emerald-50" />
+        <WhatsAppCTA label="Message Me" variant="secondary" icon />
       </RevealOnScroll>
     </section>
 
@@ -229,7 +247,7 @@ const AboutPage = () => (
               <ImagePlaceholder 
                 src="credential-hca.png" 
                 alt="Health Coach Certification" 
-                className="aspect-video rounded-[2.5rem] bg-white border border-emerald-50 shadow-sm" 
+                className="aspect-video rounded-[2.5rem] bg-white shadow-sm" 
               />
             </div>
             <p className="text-lg font-semibold text-[#1a4a3a]">Health Coach Certification</p>
@@ -239,7 +257,7 @@ const AboutPage = () => (
               <ImagePlaceholder 
                 src="credential-sacssp.png" 
                 alt="Registered Social Worker" 
-                className="aspect-video rounded-[2.5rem] bg-white border border-emerald-50 shadow-sm" 
+                className="aspect-video rounded-[2.5rem] bg-white shadow-sm" 
               />
             </div>
             <p className="text-lg font-semibold text-[#1a4a3a]">Registered Social Worker</p>
@@ -267,10 +285,10 @@ const HealthCoachingPage = () => (
         <p className="text-lg text-[#1a4a3a]/70 font-light leading-relaxed">
           Health coaches are professionally trained to assist you to achieve your wellness goals. We are dedicated to helping you manage chronic conditions, lose weight, reduce stress, and enhance your sleep quality.
         </p>
-        <p className="text-lg text-[#1a4a3a]/70 font-light leading-relaxed mb-6">
-          Health coaches believe that you have the answers to your health and wellness issues. We tap into your inner strengths and work together to dismantle any self-limiting beliefs and obstacles in your path.
+        <p className="text-lg text-[#1a4a3a]/70 font-light leading-relaxed mb-8">
+          Health coaches tap into your inner strengths and work together to dismantle any self-limiting beliefs and obstacles in your path.
         </p>
-        <WhatsAppCTA label="Ask About Coaching" icon />
+        <WhatsAppCTA label="Enquire Now" icon />
       </RevealOnScroll>
     </section>
 
@@ -278,10 +296,10 @@ const HealthCoachingPage = () => (
       <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
         <RevealOnScroll className="space-y-6 order-2 lg:order-1">
           <h2 className="text-3xl font-bold text-[#1a4a3a]">How do health coaches work?</h2>
-          <p className="text-lg text-[#1a4a3a]/70 font-light leading-relaxed">
-            Health coaches are experts in creating feasible, sustainable, measurable, and exciting health goals based on the latest research and interventions. Accountability is a core component.
+          <p className="text-lg text-[#1a4a3a]/70 font-light leading-relaxed mb-6">
+            Accountability is a core component. Coaches serve as partners to ensure progress towards goals. We work with a biopsychosocial approach, recognizing the interconnectedness between mind and body.
           </p>
-          <WhatsAppCTA label="Learn More" className="bg-emerald-700 mt-4" />
+          <WhatsAppCTA label="Message for Details" variant="outline" icon />
         </RevealOnScroll>
         <RevealOnScroll className="order-1 lg:order-2 group">
           <ImagePlaceholder 
@@ -314,21 +332,21 @@ const PsychosocialPage = () => (
       {[
         {
           icon: Brain,
-          title: "Depression & Anxiety",
+          title: "Mental Health",
           img: "service-mental-health.jpg",
-          text: "Individually tailored treatment plans designed to enhance well-being while recognizing the critical connection between mental and physical health."
+          text: "Support for depression and anxiety through expert guidance and tailored treatment plans."
         },
         {
           icon: Shield,
-          title: "Substance Use",
+          title: "Recovery Support",
           img: "service-recovery.jpg",
-          text: "Comprehensive, evidence-based assistance rooted in harm reduction, guiding clients on their personal journeys toward self-determined goals."
+          text: "Assistance for substance use disorders rooted in harm reduction and dignity."
         },
         {
           icon: Heart,
           title: "Relationships",
           img: "service-couples.jpg",
-          text: "Helping couples improve communication, resolve conflicts, and build amazing partnerships with practical weekly actions."
+          text: "Guidance for couples to improve communication and build stronger partnerships."
         }
       ].map((card, i) => (
         <RevealOnScroll key={i} className="bg-white p-8 rounded-[2.5rem] border border-emerald-50 shadow-sm hover:shadow-xl transition-all duration-500 flex flex-col group" style={{ transitionDelay: `${i * 150}ms` }}>
@@ -340,7 +358,7 @@ const PsychosocialPage = () => (
           <div className="w-12 h-12 bg-emerald-50 rounded-full flex items-center justify-center text-[#1a4a3a] mb-6"><card.icon size={24} /></div>
           <h3 className="text-2xl font-bold text-[#1a4a3a] mb-4">{card.title}</h3>
           <p className="text-sm text-[#1a4a3a]/60 leading-relaxed font-light mb-8">{card.text}</p>
-          <WhatsAppCTA label="Enquire" icon className="w-full mt-auto" />
+          <WhatsAppCTA label="Enquire via WhatsApp" icon className="w-full mt-auto" />
         </RevealOnScroll>
       ))}
     </section>
@@ -359,12 +377,12 @@ const RetreatsPage = () => (
       </RevealOnScroll>
       <RevealOnScroll className="space-y-8">
         <span className="text-[#1a4a3a] text-[10px] font-bold tracking-[0.4em] uppercase block">RETREATS</span>
-        <h1 className="text-5xl md:text-6xl font-bold text-[#1a4a3a] leading-tight">Finding Inspiration at Every Turn</h1>
-        <h2 className="text-2xl font-serif italic text-emerald-800">With like-minded individuals!</h2>
+        <h1 className="text-5xl md:text-6xl font-bold text-[#1a4a3a] leading-tight">Inspiration at Every Turn</h1>
+        <h2 className="text-2xl font-serif italic text-emerald-800">Transformative wellness retreats.</h2>
         <p className="text-lg text-[#1a4a3a]/70 font-light leading-relaxed mb-6">
-          Welcome to my wellness retreats, where we come together to elevate our well-being with purpose and intention. My expertly crafted programs guarantee a transformative experience for every participant. 
+          Elevate your well-being with purpose and intention. My crafted programs guarantee a life-changing experience.
         </p>
-        <WhatsAppCTA label="Join a Retreat" icon />
+        <WhatsAppCTA label="Join Next Retreat" icon />
       </RevealOnScroll>
     </section>
   </div>
@@ -372,40 +390,25 @@ const RetreatsPage = () => (
 
 const TestimonialsPage = () => {
   const testimonials = [
-    {
-      name: "Devina",
-      location: "Durban, March 2024",
-      text: "I am thrilled to recommend Prof. Monique Marks as a truly exceptional therapist. After trying several other therapists without feeling a connection, I was blown away by Monique's expertise."
-    },
-    {
-      name: "Haneem",
-      location: "Durban, July 2024",
-      text: "Monique was almost instantly able to put a word to describe the state that I was in and from our very first session I started to feel a change. Truly grateful!"
-    },
-    {
-      name: "Melanie",
-      location: "July 2025",
-      text: "Professor Marks has made an exceptional contribution to my health. I was offered a safe environment with sincere interest and without judgement."
-    }
+    { name: "Devina", text: "Truly exceptional therapist. Expert, warm, and professional." },
+    { name: "Haneem", text: "Started to feel a change from the very first session. Truly grateful." },
+    { name: "Melanie", text: "Exceptional contribution to my health. Safe environment without judgement." }
   ];
 
   return (
     <div className="animate-in fade-in duration-700 bg-[#fdfcf8] pt-32">
       <section className="py-20 px-6 md:px-12 text-center">
         <RevealOnScroll>
-          <h1 className="text-4xl md:text-6xl font-bold text-[#1a4a3a] mb-12">What My Clients Say</h1>
-          <WhatsAppCTA label="Read More Success Stories" className="bg-emerald-50 text-[#1a4a3a] hover:bg-emerald-100" />
+          <h1 className="text-4xl md:text-6xl font-bold text-[#1a4a3a] mb-12">Client Stories</h1>
+          <WhatsAppCTA label="Message Monique" icon />
         </RevealOnScroll>
       </section>
       <section className="pb-24 px-6 md:px-12 max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
         {testimonials.map((t, i) => (
-          <RevealOnScroll key={i} className="bg-white p-10 rounded-[2.5rem] border border-emerald-50 shadow-sm hover:shadow-xl transition-all duration-500">
+          <RevealOnScroll key={i} className="bg-white p-10 rounded-[2.5rem] border border-emerald-50 shadow-sm">
             <Quote className="text-emerald-500 mb-6 opacity-20" size={48} />
-            <p className="text-[#1a4a3a]/70 text-lg leading-relaxed font-light italic mb-8">"{t.text}"</p>
-            <div className="flex flex-col">
-              <span className="font-bold text-[#1a4a3a] text-xl">{t.name}</span>
-              <span className="text-[#1a4a3a]/40 text-sm">{t.location}</span>
-            </div>
+            <p className="text-[#1a4a3a]/70 text-lg italic mb-8">"{t.text}"</p>
+            <span className="font-bold text-[#1a4a3a] text-xl">— {t.name}</span>
           </RevealOnScroll>
         ))}
       </section>
@@ -413,80 +416,42 @@ const TestimonialsPage = () => {
   )
 }
 
-const PackagesPage = () => {
-  const FeatureItem: React.FC<{ text: string; dark?: boolean }> = ({ text, dark = false }) => (
-    <li className="flex items-start gap-3 text-sm leading-relaxed">
-      <Check size={18} className={dark ? 'text-emerald-300 shrink-0' : 'text-emerald-600 shrink-0'} />
-      <span className={dark ? 'text-emerald-50/80' : 'text-[#1a4a3a]/70'}>{text}</span>
-    </li>
-  );
-
-  return (
-    <div className="animate-in fade-in duration-700 bg-[#fdfcf8] pt-32">
-      <section className="py-20 px-6 md:px-12 text-center">
-        <div className="max-w-3xl mx-auto">
-          <span className="text-[#1a4a3a] text-[10px] font-bold tracking-[0.4em] uppercase mb-6 block">WORK WITH ME</span>
-          <h1 className="text-4xl md:text-6xl font-bold text-[#1a4a3a] mb-6">Choose Your Wellness Journey</h1>
-        </div>
-      </section>
-      <section className="py-20 px-6 md:px-12 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {[
-          {
-            label: "REBOOT",
-            title: "One Month Reboot",
-            features: ["90-minute initial session", "3 weekly sessions", "Daily WhatsApp check-in", "Clean eating plan"]
-          },
-          {
-            label: "MOST POPULAR",
-            title: "Elite Package",
-            dark: true,
-            features: ["90-minute weekly sessions", "15-minute laser calls", "Daily check-ins", "Family support sessions"]
-          },
-          {
-            label: "PREMIUM",
-            title: "Six Month Premium",
-            features: ["Weekly 60-min sessions", "Daily WhatsApp check-in", "Extra sessions as needed", "Chronic illness support"]
-          }
-        ].map((pkg, i) => (
-          <RevealOnScroll key={i} className="flex h-full">
-            <div className={`${pkg.dark ? 'bg-[#1a4a3a] text-white border-4 border-emerald-700/20 scale-105 shadow-2xl z-10' : 'bg-white border border-emerald-100 shadow-sm'} p-10 rounded-[2.5rem] hover:shadow-2xl transition-all duration-500 flex flex-col w-full h-full`}>
-              <span className={`${pkg.dark ? 'bg-emerald-400 text-[#1a4a3a] px-3 py-1 rounded-full' : 'text-[#1a4a3a]'} text-[10px] font-bold tracking-[0.3em] uppercase mb-4 w-fit`}>{pkg.label}</span>
-              <h3 className="text-3xl font-bold mb-6">{pkg.title}</h3>
-              <ul className="space-y-4 mb-10 flex-grow">
-                {pkg.features.map((f, idx) => <FeatureItem key={idx} text={f} dark={pkg.dark} />)}
-              </ul>
-              <WhatsAppCTA 
-                label="Book Now" 
-                className={pkg.dark ? 'bg-white text-[#1a4a3a] hover:bg-emerald-50' : 'bg-[#1a4a3a]'} 
-              />
-            </div>
-          </RevealOnScroll>
-        ))}
-      </section>
-    </div>
-  )
-}
+const PackagesPage = () => (
+  <div className="animate-in fade-in duration-700 bg-[#fdfcf8] pt-32">
+    <section className="py-20 px-6 md:px-12 text-center">
+      <h1 className="text-4xl md:text-6xl font-bold text-[#1a4a3a] mb-6">Coaching Packages</h1>
+      <WhatsAppCTA label="Ask for Pricing" variant="outline" icon />
+    </section>
+    <section className="py-20 px-6 md:px-12 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
+      {[
+        { title: "REBOOT", desc: "One Month Reset" },
+        { title: "ELITE", desc: "Premium Weekly Support", dark: true },
+        { title: "PREMIUM", desc: "Six Month Journey" }
+      ].map((pkg, i) => (
+        <RevealOnScroll key={i} className="flex h-full">
+          <div className={`${pkg.dark ? 'bg-[#1a4a3a] text-white scale-105' : 'bg-white'} p-10 rounded-[2.5rem] shadow-xl flex flex-col w-full h-full`}>
+            <h3 className="text-3xl font-bold mb-4">{pkg.title}</h3>
+            <p className="mb-10 opacity-70">{pkg.desc}</p>
+            <WhatsAppCTA label="Select Package" variant={pkg.dark ? 'secondary' : 'primary'} className="mt-auto" icon />
+          </div>
+        </RevealOnScroll>
+      ))}
+    </section>
+  </div>
+)
 
 const ContactPage = () => (
   <div className="animate-in fade-in duration-700 bg-[#fdfcf8] pt-40 pb-24 px-6 md:px-12 max-w-7xl mx-auto">
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-start">
       <RevealOnScroll className="space-y-8">
-        <h1 className="text-4xl md:text-6xl font-bold text-[#1a4a3a]">Let's Start Your Journey</h1>
-        <p className="text-lg text-[#1a4a3a]/70 font-light">Whether you have questions or are ready to book, I'd love to hear from you. Online and in-person sessions available.</p>
-        <div className="space-y-4">
-           <div className="flex items-center gap-3 text-[#1a4a3a] font-medium"><Phone size={18}/> Available for Consults</div>
-           <div className="flex items-center gap-3 text-[#1a4a3a] font-medium"><MapPin size={18}/> Durban & International Online</div>
-        </div>
-        <WhatsAppCTA label="Chat on WhatsApp" icon />
+        <h1 className="text-4xl md:text-6xl font-bold text-[#1a4a3a]">Get In Touch</h1>
+        <p className="text-lg text-[#1a4a3a]/70">Ready to transform your health? Let's connect on WhatsApp for the fastest response.</p>
+        <WhatsAppCTA label="Chat with Monique" icon />
       </RevealOnScroll>
       <RevealOnScroll className="delay-200">
         <div className="bg-white p-8 md:p-12 rounded-[2.5rem] shadow-xl border border-emerald-50">
-          <form className="space-y-6" onSubmit={e => e.preventDefault()}>
-            <input type="text" placeholder="Full Name" className="w-full px-5 py-4 bg-emerald-50/30 border border-emerald-100 rounded-2xl focus:outline-none focus:border-[#1a4a3a]" />
-            <input type="email" placeholder="Email Address" className="w-full px-5 py-4 bg-emerald-50/30 border border-emerald-100 rounded-2xl focus:outline-none focus:border-[#1a4a3a]" />
-            <textarea rows={4} placeholder="Your health goals..." className="w-full px-5 py-4 bg-emerald-50/30 border border-emerald-100 rounded-2xl focus:outline-none focus:border-[#1a4a3a] resize-none"></textarea>
-            <WhatsAppCTA label="Send via WhatsApp" className="w-full" icon />
-          </form>
+          <h2 className="text-2xl font-bold mb-8">Send a Message</h2>
+          <WhatsAppCTA label="Connect on WhatsApp" className="w-full" icon />
         </div>
       </RevealOnScroll>
     </div>
@@ -495,22 +460,15 @@ const ContactPage = () => (
 
 const BlogPage = () => (
   <div className="animate-in fade-in duration-700 bg-[#fdfcf8] pt-40 px-6 md:px-12 max-w-7xl mx-auto pb-24">
-    <div className="text-center mb-16"><h1 className="text-5xl font-bold text-[#1a4a3a]">Health & Wellness Insights</h1></div>
+    <h1 className="text-5xl font-bold text-[#1a4a3a] text-center mb-16">Insights</h1>
     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
       {[1, 2, 3].map(i => (
-        <RevealOnScroll key={i} className="group">
-          <ImagePlaceholder 
-            src={`blog-post-${i}.jpg`} 
-            alt="Blog Post" 
-            className="aspect-[4/3] rounded-3xl mb-6 shadow-sm group-hover:shadow-lg transition-all" 
-          />
-          <h3 className="text-2xl font-bold text-[#1a4a3a] mb-4">Coming Soon</h3>
-          <div className="flex items-center gap-2 text-sm font-bold text-[#1a4a3a]">Read More <ArrowRight size={16} /></div>
+        <RevealOnScroll key={i}>
+          <ImagePlaceholder src={`blog-post-${i}.jpg`} alt="Blog" className="aspect-video rounded-3xl mb-6 shadow-sm" />
+          <h3 className="text-2xl font-bold mb-4">Coming Soon</h3>
+          <WhatsAppCTA label="Get Updates" variant="outline" className="w-full" />
         </RevealOnScroll>
       ))}
-    </div>
-    <div className="mt-16 text-center">
-      <WhatsAppCTA label="Subscribe for Updates" />
     </div>
   </div>
 )
@@ -537,7 +495,7 @@ export default function App() {
     { id: 'home', label: 'Home' },
     { id: 'about', label: 'About Me' },
     { id: 'health-coaching', label: 'Health Coaching' },
-    { id: 'psychosocial', label: 'Psychosocial Services' },
+    { id: 'psychosocial', label: 'Psychosocial' },
     { id: 'packages', label: 'Packages' },
     { id: 'retreats', label: 'Retreats' },
     { id: 'testimonials', label: 'Testimonials' },
@@ -546,57 +504,59 @@ export default function App() {
   ]
 
   return (
-    <div className="min-h-screen text-[#1a4a3a]">
+    <div className="min-h-screen text-[#1a4a3a] selection:bg-emerald-100">
       {/* NAVBAR */}
-      <nav className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-500 px-6 md:px-12 ${scrolled ? 'bg-white/90 backdrop-blur-lg border-b border-emerald-50 py-4 shadow-sm' : 'bg-transparent py-8'}`}>
+      <nav className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-500 px-6 md:px-12 ${scrolled ? 'bg-white/95 backdrop-blur-md border-b border-emerald-50 py-3 shadow-sm' : 'bg-transparent py-8'}`}>
         <div className="max-w-[1440px] mx-auto flex items-center justify-between">
-          {/* Logo - Far Left */}
-          <div className="flex-shrink-0 lg:w-[250px]">
-            <button onClick={() => setPage('home')} className="text-2xl md:text-3xl font-bold tracking-tight hover:opacity-80 transition-opacity whitespace-nowrap">
+          {/* Logo Area */}
+          <button 
+            onClick={() => setPage('home')} 
+            className="flex items-center gap-2 group transition-all"
+          >
+            <div className="w-10 h-10 bg-[#1a4a3a] text-white rounded-xl flex items-center justify-center group-hover:rotate-6 transition-transform">
+              <Leaf size={20} fill="currentColor" />
+            </div>
+            <span className="text-xl md:text-2xl font-bold tracking-tight text-[#1a4a3a] font-serif">
               Your Health Prof
-            </button>
-          </div>
+            </span>
+          </button>
 
-          {/* Nav Links - Centered */}
-          <div className="hidden xl:flex flex-1 justify-center items-center space-x-10">
+          {/* Desktop Nav */}
+          <div className="hidden xl:flex items-center space-x-8">
             {navItems.map(item => (
               <button 
                 key={item.id} 
                 onClick={() => setPage(item.id)} 
-                className={`text-[11px] uppercase tracking-[0.2em] font-bold transition-all relative whitespace-nowrap ${page === item.id ? 'text-[#1a4a3a]' : 'text-[#1a4a3a]/40 hover:text-[#1a4a3a]'}`}
+                className={`text-[10px] uppercase tracking-[0.2em] font-bold transition-all relative ${page === item.id ? 'text-[#1a4a3a]' : 'text-[#1a4a3a]/40 hover:text-[#1a4a3a]'}`}
               >
                 {item.label}
                 {page === item.id && (
-                  <span className="absolute -bottom-2 left-0 right-0 h-0.5 bg-[#1a4a3a] rounded-full animate-in zoom-in duration-300"></span>
+                  <span className="absolute -bottom-1.5 left-0 right-0 h-0.5 bg-[#1a4a3a] rounded-full"></span>
                 )}
               </button>
             ))}
-          </div>
-
-          {/* Action Button - Far Right */}
-          <div className="hidden xl:flex items-center justify-end lg:w-[250px]">
-             <WhatsAppCTA label="Get Started" className="px-6 py-3 text-xs" />
+            <WhatsAppCTA label="WhatsApp Me" className="px-5 py-2.5 text-[10px] uppercase tracking-widest" icon />
           </div>
 
           {/* Mobile Toggle */}
-          <div className="xl:hidden text-[#1a4a3a] cursor-pointer" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+          <div className="xl:hidden text-[#1a4a3a]" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
             {mobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
           </div>
         </div>
 
-        {/* MOBILE NAV */}
+        {/* MOBILE MENU */}
         {mobileMenuOpen && (
-          <div className="xl:hidden absolute top-full left-0 right-0 bg-white border-b border-emerald-50 p-6 flex flex-col space-y-4 shadow-xl animate-in slide-in-from-top duration-300 max-h-[85vh] overflow-y-auto">
+          <div className="xl:hidden absolute top-full left-0 right-0 bg-white border-b border-emerald-50 p-6 flex flex-col space-y-3 shadow-2xl animate-in slide-in-from-top duration-300">
             {navItems.map(item => (
               <button 
                 key={item.id} 
                 onClick={() => setPage(item.id)} 
-                className={`text-sm text-left font-bold p-4 rounded-xl transition-all ${page === item.id ? 'bg-emerald-50 text-[#1a4a3a]' : 'text-[#1a4a3a]/60'}`}
+                className={`text-sm text-left font-bold p-4 rounded-xl ${page === item.id ? 'bg-emerald-50 text-[#1a4a3a]' : 'text-[#1a4a3a]/60'}`}
               >
                 {item.label}
               </button>
             ))}
-            <WhatsAppCTA label="Get Started on WhatsApp" className="w-full mt-4" icon />
+            <WhatsAppCTA label="Connect on WhatsApp" className="w-full mt-4" icon />
           </div>
         )}
       </nav>
@@ -613,13 +573,20 @@ export default function App() {
         {page === 'contact' && <ContactPage />}
       </main>
 
-      <footer className="py-20 border-t border-emerald-50 bg-[#fdfcf8] text-center">
+      <footer className="py-20 bg-[#fdfcf8] border-t border-emerald-50 text-center">
         <div className="max-w-7xl mx-auto px-6">
-          <h3 className="text-2xl font-bold mb-4">Your Health Prof</h3>
-          <p className="text-sm text-[#1a4a3a]/40 mb-8">Certified Health Coach & Registered Social Worker</p>
-          <WhatsAppCTA label="Say Hello on WhatsApp" icon className="mb-12" />
-          <div className="h-px bg-emerald-100/50 w-24 mx-auto my-8" />
-          <p className="text-xs text-[#1a4a3a]/30 uppercase tracking-[0.2em]">&copy; {new Date().getFullYear()} Your Health Prof. All rights reserved.</p>
+          <div className="flex flex-col items-center mb-10">
+            <div className="w-12 h-12 bg-[#1a4a3a] text-white rounded-2xl flex items-center justify-center mb-4">
+              <Leaf size={24} fill="currentColor" />
+            </div>
+            <h3 className="text-2xl font-bold font-serif">Your Health Prof</h3>
+            <p className="text-sm opacity-40">Certified Health Coach & Social Worker</p>
+          </div>
+          <WhatsAppCTA label="Start Conversation" icon />
+          <div className="mt-12 pt-8 border-t border-emerald-100 flex flex-col md:flex-row justify-between items-center text-[10px] uppercase tracking-widest opacity-30 gap-4">
+            <span>&copy; {new Date().getFullYear()} Your Health Prof</span>
+            <span>Based in South Africa & Online Worldwide</span>
+          </div>
         </div>
       </footer>
     </div>
